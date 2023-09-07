@@ -1,0 +1,31 @@
+---
+- name: Fetch images
+  ansible.builtin.command: kubeadm config images pull
+  changed_when: false
+
+- name: Initialise the K8S cluster
+  ansible.builtin.shell: |
+    kubeadm init --apiserver-advertise-address=192.168.56.111
+    sleep 10
+  changed_when: false
+
+- name: Get kubeadm join command
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: join_command
+  changed_when: false
+
+- name: Generate token to join the k8s cluster
+  ansible.builtin.shell: echo "{{ join_command.stdout }}" | grep 'token'| tr -d '"'| awk '{$1=$1;print}'
+  register: token_result
+
+- name: Create join_cluster.sh
+  ansible.builtin.copy:
+    content: "{{ token_result.stdout }}"
+    dest: /tmp/join_cluster.sh
+    mode: '0755'
+
+- name: Install CNI
+  ansible.builtin.shell: |
+    kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+    sleep 30
+  changed_when: false

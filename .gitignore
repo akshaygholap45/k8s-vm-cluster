@@ -1,0 +1,5 @@
+.vscode/
+.infracost/
+.vagrant/
+ubuntu/vagrant/akshay_key.pub
+ubuntu-bionic-18.04-cloudimg-console.log

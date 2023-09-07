@@ -1,0 +1,15 @@
+---
+all:
+  hosts:
+  children:
+    master:
+      hosts:
+        kubemaster:
+          ansible_host: 192.168.56.111
+
+    worker:
+      hosts:
+        kubenode01:
+          ansible_host: 192.168.56.201
+        kubenode02:
+          ansible_host: 192.168.56.202
