@@ -20,3 +20,4 @@
   become: true
   roles:
     - worker-setup
+  tags: worker_block

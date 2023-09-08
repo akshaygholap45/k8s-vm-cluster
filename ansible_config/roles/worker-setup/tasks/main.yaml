@@ -5,8 +5,10 @@
   register: file_result
 
 - name: Descide to join the cluster
-  when: not file_result.stat.exist
+  when: file_result.stat.exists is defined and file_result.stat.exists
   block:
     - name: Join k8s cluster
-      ansible.builtin.command: /mnt/smbshare/join_cluster.sh
+      ansible.builtin.shell: |
+        sh /mnt/smbshare/join_cluster.sh
+        sleep 30
       changed_when: false
