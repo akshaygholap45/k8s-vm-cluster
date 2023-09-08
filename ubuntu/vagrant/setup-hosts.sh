@@ -19,6 +19,6 @@ ${NETWORK}.202  kubenode02
 EOF
 
 # Enable Root login, Password authenticaation
-sed -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' -i /etc/ssh/sshd_config
+#sed -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' -i /etc/ssh/sshd_config
 sed -e 's/PasswordAuthentication no/PasswordAuthentication yes/' -i /etc/ssh/sshd_config
 systemctl restart ssh

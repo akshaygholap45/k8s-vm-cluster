@@ -1,9 +1,12 @@
 ---
-- name: Copy join_cluster.sh
-  ansible.builtin.shell: |
-    scp -p root@192.168.56.111:/tmp/join_cluster.sh /root/
-    chmod +x /root/join_cluster.sh
+- name: Check the join_cluster script availability
+  ansible.builtin.stat:
+    path: /mnt/smbshare/join_cluster.sh
+  register: file_result
 
-- name: Join k8s cluster
-  ansible.builtin.command: /root/join_cluster.sh
-  changed_when: false
+- name: Descide to join the cluster
+  when: not file_result.stat.exist
+  block:
+    - name: Join k8s cluster
+      ansible.builtin.command: /mnt/smbshare/join_cluster.sh
+      changed_when: false
