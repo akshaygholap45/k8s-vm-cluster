@@ -1,56 +1,41 @@
 ---
-- name: Fetch images
-  ansible.builtin.command: kubeadm config images pull
-  changed_when: false
+- name: Check if Master has initialised the cluster already
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubemasterconf_rc
 
-- name: Initialise the K8S cluster
-  ansible.builtin.shell: |
-    kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.56.111
-    sleep 10
-  changed_when: false
+- name: Creating the Cluster
+  when: not kubemasterconf_rc.stat.exists
+  block:
+    - name: Fetch images
+      ansible.builtin.command: kubeadm config images pull
+      changed_when: false
 
-- name: Create cluster joining script
-  ansible.builtin.shell: |
-    kubeadm token create --print-join-command > /srv/smbshare/join_cluster.sh
-    chmod a+x /srv/smbshare/join_cluster.sh
-  changed_when: false
+    - name: Initialise the K8S cluster
+      ansible.builtin.shell: |
+        kubeadm init --pod-network-cidr={{ pod_nw_cidr }} --apiserver-advertise-address={{ ansible_host }}
+        sleep 10
+      changed_when: false
 
-# - name: Fetch join_cluster script from master
-#   ansible.builtin.fetch:
-#     src: /tmp/join_cluster.sh
-#     dest: join_cluster.sh
-#     flat: true
-#   delegate_to: kubenode01
-#   tags: copyit
+    - name: Create cluster joining script
+      ansible.builtin.shell: |
+        kubeadm token create --print-join-command > /srv/smbshare/join_cluster.sh
+        chmod a+x /srv/smbshare/join_cluster.sh
+      changed_when: false
 
-# - name: Get kubeadm join command
-#   ansible.builtin.command: kubeadm token create --print-join-command
-#   register: join_command
-#   changed_when: false
+    - name: Install CNI
+      ansible.builtin.shell: |
+        kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+        sleep 30
+      changed_when: false
 
-# - name: Generate token to join the k8s cluster
-#   ansible.builtin.shell: echo "{{ join_command.stdout }}" | grep 'token'| tr -d '"'| awk '{$1=$1;print}'
-#   register: token_result
-
-# - name: Create join_cluster.sh
-#   ansible.builtin.copy:
-#     content: "{{ token_result.stdout }}"
-#     dest: /tmp/join_cluster.sh
-#     mode: '0755'
-
-- name: Install CNI
-  ansible.builtin.shell: |
-    kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
-    sleep 30
-  changed_when: false
-
-- name: Grant kubectl access to ubuntu user
-  become_user: ubuntu
-  ansible.builtin.shell: |
-    cd
-    mkdir -p $HOME/.kube
-    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-    sudo chown $(id -u):$(id -g) $HOME/.kube/config
-    echo "alias k=kubectl" >> .bashrc
-  changed_when: false
-  tags: user_check
+    - name: Grant kubectl access to ubuntu user
+      become_user: ubuntu
+      ansible.builtin.shell: |
+        cd
+        mkdir -p $HOME/.kube
+        sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        sudo chown $(id -u):$(id -g) $HOME/.kube/config
+        echo "alias k=kubectl" >> .bashrc
+      changed_when: false
+      tags: user_check
