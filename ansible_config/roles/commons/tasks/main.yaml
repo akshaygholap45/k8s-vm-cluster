@@ -8,5 +8,6 @@
     - gnupg
     - vim
     - net-tools
+    - cifs-utils
     - apt-transport-https
     - ca-certificates

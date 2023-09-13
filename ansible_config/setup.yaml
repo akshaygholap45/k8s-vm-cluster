@@ -12,6 +12,7 @@
   hosts: master
   become: true
   roles:
+    - smbshare-setup
     - cluster-setup
 
 # ==== Play to setup and configure k8s worker nodes ==========
@@ -19,6 +20,7 @@
   hosts: worker
   become: true
   roles:
+    - smbshare-mounting
     - worker-setup
   tags: worker_block
 

@@ -71,30 +71,30 @@ Vagrant.configure("2") do |config|
 
         node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
 
-        node.vm.provision "shell", inline: <<-SHELL
-          # Install Samba
-          apt-get update
-          apt-get install -y samba
+        # node.vm.provision "shell", inline: <<-SHELL
+        #   # Install Samba
+        #   apt-get update
+        #   apt-get install -y samba
 
-          # Create a directory to share
-          sudo mkdir -p /srv/smbshare
-          sudo chmod 777 /srv/smbshare
+        #   # Create a directory to share
+        #   sudo mkdir -p /srv/smbshare
+        #   sudo chmod 777 /srv/smbshare
 
-          # Configure the Samba share
-          echo "[smbshare]" | sudo tee -a /etc/samba/smb.conf
-          echo "   path = /srv/smbshare" | sudo tee -a /etc/samba/smb.conf
-          echo "   read only = no" | sudo tee -a /etc/samba/smb.conf
-          echo "   guest ok = yes" | sudo tee -a /etc/samba/smb.conf
+        #   # Configure the Samba share
+        #   echo "[smbshare]" | sudo tee -a /etc/samba/smb.conf
+        #   echo "   path = /srv/smbshare" | sudo tee -a /etc/samba/smb.conf
+        #   echo "   read only = no" | sudo tee -a /etc/samba/smb.conf
+        #   echo "   guest ok = yes" | sudo tee -a /etc/samba/smb.conf
 
-          # Set a Samba password for the 'ubuntu' user
-          echo -e "qwedsa@123\nqwedsa@123" | sudo smbpasswd -a -s ubuntu
+        #   # Set a Samba password for the 'ubuntu' user
+        #   echo -e "qwedsa@123\nqwedsa@123" | sudo smbpasswd -a -s ubuntu
 
-          # Restart the Samba service
-          sudo systemctl restart smbd
-        SHELL
+        #   # Restart the Samba service
+        #   sudo systemctl restart smbd
+        # SHELL
 
-        node.vm.provision "copy_public_key", type: "file", source: "ubuntu/vagrant/akshay_key.pub", destination: "/srv/smbshare/my_key.pub"
-        node.vm.provision  "update_public_key", type: "shell", inline: "cat /srv/smbshare/my_key.pub > /home/ubuntu/.ssh/authorized_keys"
+        node.vm.provision "copy_public_key", type: "file", source: "ubuntu/vagrant/akshay_key.pub", destination: "/tmp/my_key.pub"
+        node.vm.provision  "update_public_key", type: "shell", inline: "cat /tmp/my_key.pub > /home/ubuntu/.ssh/authorized_keys"
 
       end
   end
@@ -118,22 +118,22 @@ Vagrant.configure("2") do |config|
 
         node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
 
-        node.vm.provision "shell", inline: <<-SHELL
-          # update repo
-          sudo apt-get update
-          sudo apt-get install -y cifs-utils
+        # node.vm.provision "shell", inline: <<-SHELL
+        #   # update repo
+        #   sudo apt-get update
+        #   sudo apt-get install -y cifs-utils
 
-          # Make fstab entrry for smb share
-          sudo mkdir -p /mnt/smbshare
-          sudo chmod 777 /mnt/smbshare
+        #   # Make fstab entrry for smb share
+        #   sudo mkdir -p /mnt/smbshare
+        #   sudo chmod 777 /mnt/smbshare
 
-          echo "//kubemaster/smbshare /mnt/smbshare cifs username=ubuntu,password=qwedsa@123,uid=1000,gid=1000 0 0" | sudo tee -a /etc/fstab
-          # Mount the share
-          sudo /bin/mount -a
-        SHELL
+        #   echo "//kubemaster/smbshare /mnt/smbshare cifs username=ubuntu,password=qwedsa@123,uid=1000,gid=1000 0 0" | sudo tee -a /etc/fstab
+        #   # Mount the share
+        #   sudo /bin/mount -a
+        # SHELL
 
-        # node.vm.provision "copy_public_key", type: "file", source: "ubuntu/vagrant/akshay_key.pub", destination: "/tmp/my_key.pub"
-        node.vm.provision  "update_public_key", type: "shell", inline: "cat /mnt/smbshare/my_key.pub > /home/ubuntu/.ssh/authorized_keys"
+        node.vm.provision "copy_public_key", type: "file", source: "ubuntu/vagrant/akshay_key.pub", destination: "/tmp/my_key.pub"
+        node.vm.provision  "update_public_key", type: "shell", inline: "cat /tmp/my_key.pub > /home/ubuntu/.ssh/authorized_keys"
 
     end
   end

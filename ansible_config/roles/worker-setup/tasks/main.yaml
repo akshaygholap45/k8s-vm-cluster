@@ -1,4 +1,13 @@
 ---
+- name: Update smb share mount info
+  
+
+- name: Mount smaba share on node
+  ansible.builtin.shell: |
+    echo "//kubemaster/smbshare /mnt/smbshare cifs username={{ smbuser }},password={{ smbpasswd }},uid=1000,gid=1000 0 0" >> /etc/fstab
+    /bin/mount -a
+  changed_when: false
+
 - name: Check if nodes has joined the cluster already
   ansible.builtin.stat:
     path: /etc/kubernetes/kubelet.conf
