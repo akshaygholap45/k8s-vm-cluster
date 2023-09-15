@@ -12,16 +12,15 @@
   hosts: master
   become: true
   roles:
-    - smbshare-setup
+    # - smbshare-setup
     - cluster-setup
   # ==== Copy the Cluster joining script from Master to localhost ===========
   tasks:
-    - name: Copy from remote
+    - name: Copy join cluster script from remote
       ansible.builtin.fetch:
         src: /srv/smbshare/join_cluster.sh
         dest: join_cluster.sh
         flat: true
-      tags: copy-from-remote
 
 # ==== Play to setup and configure k8s worker nodes ==========
 - name: Join cluster

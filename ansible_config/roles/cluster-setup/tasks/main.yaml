@@ -1,6 +1,6 @@
 ---
 - name: Check if Kubernetes cluster is running
-  ansible.builtin.command: kubectl cluster-info
+  ansible.builtin.command: kubectl --kubeconfig /etc/kubernetes/admin.conf cluster-info
   ignore_errors: true
   register: k8s_cluster_info
   changed_when: true
@@ -40,6 +40,6 @@
 
 - name: Create cluster joining script
   ansible.builtin.shell: |
-    kubeadm token create --print-join-command > /srv/smbshare/join_cluster.sh
-    chmod a+x /srv/smbshare/join_cluster.sh
+    kubeadm token create --print-join-command > /tmp/join_cluster.sh
+    chmod a+x /tmp/join_cluster.sh
   changed_when: true

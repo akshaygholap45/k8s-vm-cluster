@@ -1,38 +1,33 @@
 ---
-- name: Check SMB share availability
-  ansible.builtin.stat:
-    path: /mnt/smbshare
-  register: dir_status
-
-- name: Creating SAMBA share
-  when: not dir_status.stat.exists
-  block:
-    - name: Mount smaba share on node
-      ansible.builtin.shell: |
-        mkdir -p /mnt/smbshare
-        chmod 755 /mnt/smbshare
-        echo "//kubemaster/smbshare /mnt/smbshare cifs username={{ smbuser }},password={{ smbpasswd }},uid=1000,gid=1000 0 0" >> /etc/fstab
-        /bin/mount -a
-      changed_when: true
-
 - name: Check if nodes has joined the cluster already
   ansible.builtin.stat:
     path: /etc/kubernetes/kubelet.conf
-  register: kubeconf_rc
+  ignore_errors: true
+  register: kubeconf_info
 
-- name: Joining the Cluster
-  when: not kubeconf_rc.stat.exists
+- name: Check result
+  ansible.builtin.debug:
+    msg: "Node {{ ansible_host }} is {{ 'already a part of the cluster.' if kubeconf_info.stat.exists else 'not a part of the cluster.' }}"
+
+- name: Joining the K8S Cluster
+  when: not kubeconf_info.stat.exists
   block:
     - name: Check the join_cluster script availability
       ansible.builtin.stat:
-        path: /mnt/smbshare/join_cluster.sh
+        path: /tmp/join_cluster.sh
       register: file_result
 
-    - name: Descide to join the cluster
-      when: file_result.stat.exists is defined and file_result.stat.exists
+    - name: Copy the cluster Joining script
+      when: not file_result.stat.exists
       block:
+        - name: Fetch the join_cluster script
+          ansible.builtin.copy:
+            src: join_cluster.sh
+            dest: /tmp/join_cluster.sh
+            mode: '755'
+
         - name: Join k8s cluster
           ansible.builtin.shell: |
-            sh /mnt/smbshare/join_cluster.sh
+            sh /tmp/join_cluster.sh
             sleep 30
           changed_when: true
