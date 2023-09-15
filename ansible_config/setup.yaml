@@ -14,23 +14,18 @@
   roles:
     - smbshare-setup
     - cluster-setup
+  # ==== Copy the Cluster joining script from Master to localhost ===========
+  tasks:
+    - name: Copy from remote
+      ansible.builtin.fetch:
+        src: /srv/smbshare/join_cluster.sh
+        dest: join_cluster.sh
+        flat: true
+      tags: copy-from-remote
 
 # ==== Play to setup and configure k8s worker nodes ==========
 - name: Join cluster
   hosts: worker
   become: true
   roles:
-    - smbshare-mounting
     - worker-setup
-  tags: worker_block
-
-# # === Testing ===
-# - name: Export IP details
-#   hosts: master
-#   become: true
-#   tasks:
-#     - name: Display IPv4 Addresses
-#       ansible.builtin.shell: |
-#         touch /home/ubuntu/ips.txt
-#         echo {{ ansible_host }} > /home/ubuntu/ips.txt
-#   tags: test_tag

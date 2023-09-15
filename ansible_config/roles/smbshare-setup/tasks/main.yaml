@@ -1,11 +1,11 @@
 ---
 - name: Check samba server config availability
   ansible.builtin.stat:
-    path: /etc/samba/smb.conf
+    path: "{{ smbpath }}"
   register: check_smb_file
 
 - name: Configure smba share
-  when: check_smb_file.stat.exists
+  when: not check_smb_file.stat.exists
   block:
     - name: Install samba
       ansible.builtin.apt:
@@ -37,4 +37,4 @@
 
     - name: Grant samba share access to ubuntu user
       ansible.builtin.command: echo -e "{{ smbpasswd }}\n{{ smbpasswd }}" | sudo smbpasswd -a -s {{ smbuser }}
-      changed_when: false
+      changed_when: true

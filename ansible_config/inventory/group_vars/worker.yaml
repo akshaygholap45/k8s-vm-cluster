@@ -1,2 +1,6 @@
 ---
 ansible_user: ubuntu
+
+smbpath: /srv/smbshare
+smbuser: ubuntu
+smbpasswd: "qwedsa@123"
