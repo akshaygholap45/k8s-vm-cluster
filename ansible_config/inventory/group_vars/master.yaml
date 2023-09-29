@@ -1,8 +1,3 @@
 ---
 ansible_user: ubuntu
-
-smbpath: /srv/smbshare
-smbuser: ubuntu
-smbpasswd: "qwedsa@123"
-
 pod_nw_cidr: 10.244.0.0/16
