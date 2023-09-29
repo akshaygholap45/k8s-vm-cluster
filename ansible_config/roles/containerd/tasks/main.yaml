@@ -56,8 +56,7 @@
         - kubectl
 
 # =========== containerd configuration ================
-
-    - name: Truncate the file
+    - name: Truncate the donfig.toml file
       ansible.builtin.copy:
         content: ""
         dest: /etc/containerd/config.toml

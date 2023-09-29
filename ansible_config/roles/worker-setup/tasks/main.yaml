@@ -17,7 +17,7 @@
         path: /tmp/join_cluster.sh
       register: file_result
 
-    - name: Copy the cluster Joining script
+    - name: Copy the cluster joining script
       when: not file_result.stat.exists
       block:
         - name: Fetch the join_cluster script

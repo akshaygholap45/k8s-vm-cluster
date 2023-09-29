@@ -2,5 +2,5 @@
 .infracost/
 .vagrant/
 ansible_config/join_cluster.sh
-ubuntu/vagrant/akshay_key.pub
+ubuntu/vagrant/my_key.pub
 ubuntu-bionic-18.04-cloudimg-console.log

@@ -38,8 +38,15 @@
         echo "alias k=kubectl" >> .bashrc
       changed_when: kubeadm_init.rc == 0
 
+# ====== Create K8S Cluster Joining script ==========
 - name: Create cluster joining script
   ansible.builtin.shell: |
     kubeadm token create --print-join-command > /tmp/join_cluster.sh
     chmod a+x /tmp/join_cluster.sh
   changed_when: true
+
+- name: Fetch cluster joining script
+  ansible.builtin.fetch:
+    src: /tmp/join_cluster.sh
+    dest: join_cluster.sh
+    flat: true
