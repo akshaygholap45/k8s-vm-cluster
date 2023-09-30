@@ -34,4 +34,58 @@ To create multiple vms locally
         - vagrant destroy - this will destroy all the VMs
 
 ## Ansible Config
-To configure K8S setup
+
+To configure K8S setup using Ansible
+
+Below is the directory structure of the repo:
+
+```bash
+.
+├── ansible_config
+│   ├── ansible.cfg
+│   ├── inventory
+│   │   ├── group_vars
+│   │   │   ├── master.yaml
+│   │   │   └── worker.yaml
+│   │   ├── hosts.yaml
+│   │   └── host_vars
+│   ├── join_cluster.sh
+│   ├── roles
+│   │   ├── cluster-setup
+│   │   │   └── tasks
+│   │   │       └── main.yaml
+│   │   ├── commons
+│   │   │   └── tasks
+│   │   │       └── main.yaml
+│   │   ├── configure-kernel
+│   │   │   └── tasks
+│   │   │       └── main.yaml
+│   │   ├── containerd
+│   │   │   └── tasks
+│   │   │       └── main.yaml
+│   │   └── worker-setup
+│   │       └── tasks
+│   │           └── main.yaml
+│   └── setup.yaml
+├── README.md
+├── ubuntu 
+│   ├── update-dns.sh
+│   └── vagrant
+│       ├── install-guest-additions.sh
+│       ├── my_key.pub
+│       └── setup-hosts.sh
+└── Vagrantfile
+
+18 directories, 20 files
+
+
+```
+
+K8S Cluster Setup is constructed in 3 stages
+
+Stage 1 - Install common packages and dependencies on all nodes
+
+Stage 2 - Prepare Kubernetes Master for cluster setup
+
+Stage 3 - Join worked nodes to K8S cluster
+
