@@ -13,6 +13,7 @@
   become: true
   roles:
     - cluster-setup
+  tags: master_check
 
 # ==== Play to setup and configure k8s worker nodes ==========
 - name: Join cluster

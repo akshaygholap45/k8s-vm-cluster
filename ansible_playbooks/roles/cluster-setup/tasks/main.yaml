@@ -3,11 +3,12 @@
   ansible.builtin.command: kubectl --kubeconfig /etc/kubernetes/admin.conf cluster-info
   ignore_errors: true
   register: k8s_cluster_info
-  changed_when: true
+  changed_when: false
 
 - name: Check result
   ansible.builtin.debug:
     msg: "Kubernetes cluster is {{ 'running' if k8s_cluster_info.rc == 0 else 'not running' }}"
+    # var: k8s_cluster_info
 
 - name: Creating the Cluster
   when: k8s_cluster_info.rc != 0

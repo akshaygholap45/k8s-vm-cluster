@@ -84,6 +84,24 @@ Below is the directory structure of the repo:
 18 directories, 20 files
 ```
 
+Detailed explanation for ansible config used in this project
+
+Setup Your Inventory with the all the necessary details of the nodes your going to use in your cluster
+
+Inventory Directory Structure
+
+```
+├── ansible_config
+│   ├── ansible.cfg
+│   ├── inventory
+│   │   ├── group_vars
+│   │   │   ├── master.yaml
+│   │   │   └── worker.yaml
+│   │   ├── hosts.yaml
+│   │   └── host_vars
+
+```
+
 K8S Cluster Setup is constructed in 3 stages
 
 Stage 1 - Install common packages and dependencies on all nodes
