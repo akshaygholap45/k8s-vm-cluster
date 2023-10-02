@@ -41,13 +41,6 @@
       ansible.builtin.apt:
         name: kubelet
         state: present
-      ignore_errors: true
-      register: kubelet_checker
-
-    - name: Check install item status
-      ansible.builtin.debug:
-        # msg: "{{ item }} service {{ 'installed successfully' if install_item.rc == 0 else 'failed to install. Please verify the package repository.' }}"
-        var: kubelet_checker
 
 - name: Hold the installed packages
   ansible.builtin.dpkg_selections:
