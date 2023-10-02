@@ -1,68 +1,62 @@
 ---
-# ==== kubectl, kubelet, kubeadm Setup & Configuration ====
-- name: Check necessary packages
-  ansible.builtin.service:
+# ========= Kubernetes repo ================
+- name: Downloading Kubernetes archive keyring
+  ansible.builtin.get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+    dest: /usr/share/keyrings/kubernetes-archive-keyring.asc
+    mode: '0755'
+
+- name: Adding kubernetes repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /"
+    state: present
+    filename: kubernetes
+
+# =========== kubeadm & kubectl ==============
+- name: Installing kubeadm, kubectl
+  ansible.builtin.apt:
+    update_cache: true
     name: "{{ item }}"
+    state: present
+  with_items:
+    - kubeadm
+    - kubectl
+
+# ==== kubelet Setup & Configuration ====
+- name: Check kubelet service
+  ansible.builtin.service:
+    name: kubelet
     state: started
+  ignore_errors: true
+  register: kubelet_svc
+
+- name: Check result
+  ansible.builtin.debug:
+    msg: "kubelet service is {{ 'already running.' if kubelet_svc.state == 'started' else 'not running.' }}"
+
+- name: Installing kubelet service
+  when: kubelet_svc.state != 'started'
+  block:
+    - name: Installing kubelet
+      ansible.builtin.apt:
+        name: kubelet
+        state: present
+      ignore_errors: true
+      register: kubelet_checker
+
+    - name: Check install item status
+      ansible.builtin.debug:
+        # msg: "{{ item }} service {{ 'installed successfully' if install_item.rc == 0 else 'failed to install. Please verify the package repository.' }}"
+        var: kubelet_checker
+
+- name: Hold the installed packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
   with_items:
     - kubelet
     - kubeadm
     - kubectl
-  ignore_errors: true
-  register: kube_packages_rc
-
-- name: Check result
-  ansible.builtin.debug:
-    msg: "{{ item }} service is {{ 'running' if kube_packages_rc == 0 else 'not running' }}"
-  loop:
-    - kubelet
-    - kubeadm
-    - kubectl
-
-- name: Setup necessary packages for Kubernetes on all nodes
-  when: kube_packages_rc != 0
-  block:
-
-    - name: Downloading Kubernetes archive keyring
-      ansible.builtin.get_url:
-        url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
-        dest: /usr/share/keyrings/kubernetes-archive-keyring.asc
-        mode: '0755'
-
-    - name: Adding kubernetes repository
-      ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /"
-        state: present
-        filename: kubernetes
-
-    - name: Installing kubelet, kubeadm, kubectl, contianerd
-      ansible.builtin.apt:
-        update_cache: true
-        name: "{{ item }}"
-        state: present
-      with_items:
-        - kubelet
-        - kubeadm
-        - kubectl
-      register: install_item
-      ignore_errors: true
-
-    - name: Check install item status
-      ansible.builtin.debug:
-        msg: "{{ item }} service {{ 'installed successfully' if install_item == 0 else 'failed to install. Please verify the package repository.' }}"
-      loop:
-        - kubelet
-        - kubeadm
-        - kubectl
-
-    - name: Hold the installed packages
-      ansible.builtin.dpkg_selections:
-        name: "{{ item }}"
-        selection: hold
-      with_items:
-        - kubelet
-        - kubeadm
-        - kubectl
 
 # =========== containerd setup & configuration ================
 - name: Check necessary packages
@@ -70,14 +64,14 @@
     name: containerd
     state: started
   ignore_errors: true
-  register: package_rc
+  register: containerd_svc
 
 - name: Check result
   ansible.builtin.debug:
-    msg: "Contianerd service is {{ 'running' if package_rc == 0 else 'not running' }}"
+    msg: "Contianerd service is {{ 'already running' if containerd_svc.state == 'started' else 'not running' }}"
 
 - name: Setup Containerd basic necessary packages
-  when: package_rc != 0
+  when: containerd_svc.state != 'started'
   block:
 
     - name: Download docker keyring
@@ -98,12 +92,7 @@
       ansible.builtin.apt:
         update_cache: true
         name: containerd.io
-      ignore_errors: true
-      register: install_checker
-
-    - name: Check result for containerd package installation
-      ansible.builtin.debug:
-        msg: "Containerd.io package {{ 'installed successfully.' if install_checker == 0 else 'failed to install. Please verify pakacge repository.' }}"
+        state: present
 
     - name: Check config.toml file availability
       ansible.builtin.stat:

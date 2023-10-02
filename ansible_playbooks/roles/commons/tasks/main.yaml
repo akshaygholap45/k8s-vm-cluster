@@ -6,8 +6,6 @@
   with_items:
     - curl
     - gnupg
-    - vim
     - net-tools
-    - cifs-utils
     - apt-transport-https
     - ca-certificates
