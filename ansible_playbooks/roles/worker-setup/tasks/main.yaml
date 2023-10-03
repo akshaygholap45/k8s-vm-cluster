@@ -19,15 +19,19 @@
 
     - name: Copy the cluster joining script
       when: not file_result.stat.exists
-      block:
-        - name: Fetch the join_cluster script
-          ansible.builtin.copy:
-            src: join_cluster.sh
-            dest: /tmp/join_cluster.sh
-            mode: '755'
+      ansible.builtin.copy:
+        src: join_cluster.sh
+        dest: /tmp/join_cluster.sh
+        mode: '755'
 
-        - name: Join k8s cluster
-          ansible.builtin.shell: |
-            sh /tmp/join_cluster.sh
-            sleep 30
-          changed_when: true
+    - name: Join k8s cluster
+      ansible.builtin.shell: |
+        sh /tmp/join_cluster.sh
+        sleep 30
+      register: cluster_join
+      changed_when: true
+
+    - name: Check result for cluster
+      ansible.builtin.debug:
+        msg: "Node {{ ansible_host }} has {{ 'joined the cluster.' if cluster_join.rc == 0 else 'failed to join the cluster.' }} "
+

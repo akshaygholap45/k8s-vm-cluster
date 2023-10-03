@@ -1,26 +1,34 @@
 ---
-# ========= Kubernetes repo ================
-- name: Downloading Kubernetes archive keyring
-  ansible.builtin.get_url:
-    url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
-    dest: /usr/share/keyrings/kubernetes-archive-keyring.asc
-    mode: '0755'
-
-- name: Adding kubernetes repository
-  ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /"
-    state: present
-    filename: kubernetes
-
 # =========== kubeadm & kubectl ==============
-- name: Installing kubeadm, kubectl
-  ansible.builtin.apt:
-    update_cache: true
-    name: "{{ item }}"
-    state: present
-  with_items:
-    - kubeadm
-    - kubectl
+- name: Kubeadm setup
+  ansible.builtin.command: kubeadm version
+  ignore_errors: true
+  register: kubeadm_check
+  changed_when: true
+
+- name: Install kubeadm
+  when: kubeadm_check.rc != 0
+  block:
+    - name: Downloading Kubernetes archive keyring
+      ansible.builtin.get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+        dest: /usr/share/keyrings/kubernetes-archive-keyring.asc
+        mode: '0755'
+
+    - name: Adding kubernetes repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /"
+        state: present
+        filename: kubernetes
+
+    - name: Installing kubeadm & kubectl
+      ansible.builtin.apt:
+        update_cache: true
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - kubeadm
+        - kubectl
 
 # ==== kubelet Setup & Configuration ====
 - name: Check kubelet service
@@ -32,15 +40,22 @@
 
 - name: Check result
   ansible.builtin.debug:
-    msg: "kubelet service is {{ 'already running.' if kubelet_svc.state == 'started' else 'not running.' }}"
+    msg: "kubelet service is {{ 'not running.' if kubelet_svc.failed else 'running.' }}"
 
-- name: Installing kubelet service
-  when: kubelet_svc.state != 'started'
+- name: Kubelet service setup
+  when: kubelet_svc.failed
   block:
-    - name: Installing kubelet
+    - name: Installing kubelet service
       ansible.builtin.apt:
         name: kubelet
         state: present
+      ignore_errors: true
+      register: kubelet_svc_install
+
+    - name: Check result
+      ansible.builtin.debug:
+        msg: "kubelet {{ 'failed to install. Check package repository' if kubelet_svc_install.failed else 'installed successfully.' }}"
+        # var: kubelet_svc_install
 
 - name: Hold the installed packages
   ansible.builtin.dpkg_selections:
@@ -61,10 +76,10 @@
 
 - name: Check result
   ansible.builtin.debug:
-    msg: "Contianerd service is {{ 'already running' if containerd_svc.state == 'started' else 'not running' }}"
+    msg: "Contianerd service is {{ 'not running' if containerd_svc.failed else 'running' }}"
 
 - name: Setup Containerd basic necessary packages
-  when: containerd_svc.state != 'started'
+  when: containerd_svc.failed
   block:
 
     - name: Download docker keyring
@@ -81,11 +96,17 @@
         state: present
         filename: docker
 
-    - name: Installing conteinerd.io
+    - name: Installing contianerd.io service
       ansible.builtin.apt:
         update_cache: true
         name: containerd.io
         state: present
+      ignore_errors: true
+      register: containerd_svc_install
+
+    - name: Check result
+      ansible.builtin.debug:
+        msg: "Containerd service {{ 'failed to install. Check package repository' if containerd_svc_install.failed else 'installed successfully.' }}"
 
     - name: Check config.toml file availability
       ansible.builtin.stat:
@@ -105,7 +126,6 @@
             content: ""
             dest: /etc/containerd/config.toml
             mode: '0644'
-          changed_when: install_checker == 0
 
         - name: Configure config.toml file for systemd cgroup driver
           ansible.builtin.lineinfile:

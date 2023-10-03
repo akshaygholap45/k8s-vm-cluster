@@ -16,6 +16,7 @@ cat >> /etc/hosts <<EOF
 ${NETWORK}.111  kubemaster
 ${NETWORK}.201  kubenode01
 ${NETWORK}.202  kubenode02
+${NETWORK}.203  kubenode03
 EOF
 
 sed -e 's/PasswordAuthentication no/PasswordAuthentication yes/' -i /etc/ssh/sshd_config
