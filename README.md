@@ -1,4 +1,3 @@
-
 # K8S Cluster Automation 
 
 ## Vagrant Setup
@@ -38,9 +37,6 @@ To create multiple vms locally
 
     `vagrant destroy` - this will destroy all the VMs
     
-    In this case my setup 
-
-
 
 ## Ansible Config
 
@@ -181,9 +177,6 @@ ansible_user: ubuntu # Ubuntu user will be used by ansible for all the setup
             └── main.yaml
     ```
 
-
-### Stage 1 - Install common packages and dependencies on all nodes
-
 Make sure you have all the necessary Nodes configured in you inventory file with all the necessary variable as mentioned in the above section.
 
 Once done try running ping from ansible to check connectivity.
@@ -224,9 +217,50 @@ Test you ansible playbook before actually applying the configuration
 
 This ensures that you have configured your inventory correctly and helps you dry run your configuration on your setup.
 
+Now you can run same command without check to deploy the Kubernetes cluster environment on running VMs
+
+`ansible-playbook setup.yaml`
+
+Upon successful execution of above playbook you will be able to browse your Kubernetes cluster using `ubuntu` user.
+
+## Workflow of the ansible playbook is divided into 3 stages:
+
+### Stage 1 - Install common packages and dependencies on all nodes
+
+   1. commons - Installs common packages & dependencies
+
+    Following packages are installed on all nodes
+        - curl
+        - gnupg
+        - net-tools
+        - apt-transport-https
+        - ca-certificates
+
+    2. configure-kernel - Updates system level settings and kernel parameter for all nodes
+        - Loads module `br_netfilter` in kernel
+        - Enables following kernel parameters
+            - net.bridge.bridge-nf-call-ip6tables
+            - net.bridge.bridge-nf-call-iptables
+            - net.ipv4.ip_forward
+
+    3. containerd - Installs CRI and other necessary packages
+        Below is the list of oackages that will be installed on the nodes
+
+        1. CRI (Container Runtime Interface) - We will need containerd.io CRI to run containers in our pods for Kubernetes.
+
+        2. kubeadm - Using kubeadm, you can create a minimum viable Kubernetes cluster that conforms to best practices.
+
+        3. kubelet - Kubelet is an agent or program that runs on each node in a Kubernetes cluster.
+
+        4. kubectl - Kubectl is a command-line tool that is used to manage Kubernetes clusters. It provides a way to communicate with the Kubernetes API and carry out HTTP requests to the API. 
+
+This stage makes your nodes compatible with kubernetes environment while resolving all the dependencies and installing all the necessary packages for kubernetes cluster.
+
+### Stage 2 - Prepare Kubernetes Master for cluster setup
+
+    In this stage we will be initializing the kubernetes cluster using single kubeadm command
+    
 
 
-Stage 2 - Prepare Kubernetes Master for cluster setup
-
-Stage 3 - Join worked nodes to K8S cluster
+### Stage 3 - Join Worker Nodes to K8S Cluster
 
