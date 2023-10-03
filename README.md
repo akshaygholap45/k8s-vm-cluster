@@ -197,9 +197,7 @@ You can refer to the below workflow to understand the basic working concept of A
 
 ### Stage 1 - Install common packages and dependencies on all nodes
 
-   1. commons - Installs common packages & dependencies
-
-    Following packages are installed on all nodes
+    1. commons - Installs common packages & dependencies
         - curl
         - gnupg
         - net-tools
@@ -215,7 +213,6 @@ You can refer to the below workflow to understand the basic working concept of A
 
     3. containerd - Installs CRI and other necessary packages
         Below is the list of oackages that will be installed on the nodes
-
         1. CRI (Container Runtime Interface) - We will need containerd.io CRI to run containers in our pods for Kubernetes.
 
         2. kubeadm - Using kubeadm, you can create a minimum viable Kubernetes cluster that conforms to best practices.
