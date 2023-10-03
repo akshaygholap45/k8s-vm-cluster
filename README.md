@@ -42,52 +42,7 @@ To create multiple vms locally
 
 To configure K8S setup using Ansible
 
-Below is the directory structure of the repo:
-
-```bash
-.
-├── ansible_playbooks
-│   ├── ansible.cfg
-│   ├── inventory
-│   │   ├── group_vars
-│   │   │   ├── master.yaml
-│   │   │   └── worker.yaml
-│   │   ├── hosts.yaml
-│   │   └── host_vars
-│   ├── join_cluster.sh
-│   ├── roles
-│   │   ├── cluster-setup
-│   │   │   └── tasks
-│   │   │       └── main.yaml
-│   │   ├── commons
-│   │   │   └── tasks
-│   │   │       └── main.yaml
-│   │   ├── configure-kernel
-│   │   │   └── tasks
-│   │   │       └── main.yaml
-│   │   ├── containerd
-│   │   │   └── tasks
-│   │   │       └── main.yaml
-│   │   └── worker-setup
-│   │       └── tasks
-│   │           └── main.yaml
-│   └── setup.yaml
-├── image.png
-├── README.md
-├── ubuntu
-│   ├── update-dns.sh
-│   └── vagrant
-│       ├── install-guest-additions.sh
-│       ├── my_key.pub
-│       └── setup-hosts.sh
-├── ubuntu-bionic-18.04-cloudimg-console.log
-└── Vagrantfile
-```
-
-Detailed explanation for ansible config used in this project
-
 Setup Your Inventory with the all the necessary details of the nodes your going to use in your cluster
-
 
 > ### Inventory Directory Structure
 
@@ -103,9 +58,9 @@ Setup Your Inventory with the all the necessary details of the nodes your going 
 │   │   └── host_vars
 ```
 
-In my case I'm using the Vagrant setup mentioned above to bootstrap my VM environments. 
+In my case I'm using the Vagrant setup mentioned above to bootstrap my VM environment.
 
-You can refer the screenshot given below with the IP and Host details mentioned in `hosts.yaml` file for our ansible inventory.
+You can refer the IP and Host details mentioned in `hosts.yaml` file for our ansible inventory below.
 
 ```bash
 File: ansible_playbooks/inventory/hosts.yaml
@@ -126,7 +81,7 @@ all:
           ansible_host: 192.168.56.202
 ```
 
-> ### Necessary variables
+> ### Overview of Some Necessary Ansible Directories & Files
 
 `group_vars` - This directory contains yaml files which are named after groups mentioned in our main inventory file `hosts.yaml`
 
@@ -150,15 +105,12 @@ File: worker.yaml
 ansible_user: ubuntu # Ubuntu user will be used by ansible for all the setup
 ```
 
-## K8S Cluster Setup is constructed in 3 stages
+`setup.yaml` - Primary ansible playbook that we will be using to trigger our complete setup automation task.
 
-1. `setup.yaml` - Primary ansible playbook that we will be using to trigger our complete setup automation task.
+`roles` - Roles let you automatically load related vars, files, tasks, handlers, and other Ansible artifacts based on a known file structure.
 
-2. Roles - Roles let you automatically load related vars, files, tasks, handlers, and other Ansible artifacts based on a known file structure.
-
-    File Structure for roles in our repo:
-
-    ```bash
+    File Structure for roles directory in our repo:
+```bash
     roles
     ├── cluster-setup # K8S Cluster setup on master node
     │   └── tasks
@@ -175,7 +127,7 @@ ansible_user: ubuntu # Ubuntu user will be used by ansible for all the setup
     └── worker-setup # Helps worker nodes to join the K8S cluster
         └── tasks
             └── main.yaml
-    ```
+```
 
 Make sure you have all the necessary Nodes configured in you inventory file with all the necessary variable as mentioned in the above section.
 
@@ -211,7 +163,11 @@ kubenode01 | SUCCESS => {
 }
 ```
 
-Test you ansible playbook before actually applying the configuration
+---
+> Test your Environment Setup
+
+
+Testing your ansible playbook code before actually applying the configuration one of the crucial step to tackle any misconfigurations or human errors.
 
 `ansible-playbook setup.yaml -C`
 
@@ -222,6 +178,20 @@ Now you can run same command without check to deploy the Kubernetes cluster envi
 `ansible-playbook setup.yaml`
 
 Upon successful execution of above playbook you will be able to browse your Kubernetes cluster using `ubuntu` user.
+
+Output: You would receive the output similar to below once you executed the ansible playbook `setup.yaml`
+
+```bash
+TASK [worker-setup : Check result for cluster] *********************************************
+ok: [kubenode01] => {
+    "msg": "Node 192.168.56.201 has joined the cluster. "
+}
+ok: [kubenode02] => {
+    "msg": "Node 192.168.56.202 has joined the cluster. "
+}
+```
+
+You can refer to the below workflow to understand the basic working concept of Ansible playbooks to construct Kubernetes cluster.
 
 ## Workflow of the ansible playbook is divided into 3 stages:
 
@@ -237,7 +207,7 @@ Upon successful execution of above playbook you will be able to browse your Kube
         - ca-certificates
 
     2. configure-kernel - Updates system level settings and kernel parameter for all nodes
-        - Loads module `br_netfilter` in kernel
+        - Loads module 'br_netfilter' in kernel
         - Enables following kernel parameters
             - net.bridge.bridge-nf-call-ip6tables
             - net.bridge.bridge-nf-call-iptables
@@ -258,9 +228,132 @@ This stage makes your nodes compatible with kubernetes environment while resolvi
 
 ### Stage 2 - Prepare Kubernetes Master for cluster setup
 
-    In this stage we will be initializing the kubernetes cluster using single kubeadm command
-    
+- In this stage we will be initializing the kubernetes cluster using single kubeadm command.
 
+`kubeadm init <args>` - To initialize the control-plane node.
+
+- Complete command with arguments should be like this:
+
+`kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.56.111`
+
+Note that, depending on the variables you set the above values might change for your infrastructure.
 
 ### Stage 3 - Join Worker Nodes to K8S Cluster
+
+- Joining Worker Nodes to the cluster
+
+`kubeadm join` - Running this command with necessary token info from controlplane node helps you to join any number of nodes to your kubernetes cluster.
+
+- Refer below for complete command:
+
+`kubeadm join <control-plane-host>:<control-plane-port> --token <token> --discovery-token-ca-cert-hash sha256:<hash>`
+
+- Creating token on control plane:
+
+`kubeadm token create --print-join-command` - You can generate the token anytime after initiating the cluster using this command.
+
+> ### Test your Kubernetes cluster
+
+- Check the cluster status on Control Plane node
+
+    `kubectl cluster-info` - This command will give you the cluster info with control plane nodes details
+
+    ```bash
+    ubuntu@kubemaster:~$ kubectl cluster-info
+    Kubernetes control plane is running at https://192.168.56.111:6443
+    CoreDNS is running at https://192.168.56.111:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+    To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+    ```
+
+- Check the list of nodes in your cluster
+
+    ```bash
+    ubuntu@kubemaster:~$ kubectl get nodes
+    NAME         STATUS   ROLES           AGE     VERSION
+    kubemaster   Ready    control-plane   7m53s   v1.28.2
+    kubenode01   Ready    <none>          7m12s   v1.28.2
+    kubenode02   Ready    <none>          7m12s   v1.28.2
+    ```
+
+- Run your first pod in K8S cluster
+
+    `kubectl run mypod --image=nginx`
+
+    Output:
+    ```bash
+    ubuntu@kubemaster:~$ kubectl get pods
+    NAME    READY   STATUS    RESTARTS   AGE
+    mypod   1/1     Running   0          60s
+    ```
+
+- Create your first deployment in K8S cluster
+
+    `kubectl create deployment webserver --image=nginx --port=80 --replicas=3`
+
+    Output: You can observe the 3 pods running from this deployment
+    ```bash
+    ubuntu@kubemaster:~$ kubectl get all
+    NAME                             READY   STATUS    RESTARTS   AGE
+    pod/mypod                        1/1     Running   0          2m26s
+    pod/webserver-5d5c5c44c7-m7l86   1/1     Running   0          45s
+    pod/webserver-5d5c5c44c7-xc9vc   1/1     Running   0          45s
+    pod/webserver-5d5c5c44c7-zz5h6   1/1     Running   0          45s
+
+    NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+    service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   12m
+
+    NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+    deployment.apps/webserver   3/3     3            3           45s
+
+    NAME                                   DESIRED   CURRENT   READY   AGE
+    replicaset.apps/webserver-5d5c5c44c7   3         3         3       45s
+    ```
+
+- Expose the pod to external network
+
+    `kubectl expose deployment webserver --port=80 --type=NodePort`
+
+    Output: Check Kubernetes service with same name as that of the deployment.
+    ```bash
+    ubuntu@kubemaster:~$ kubectl get service
+    NAME         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+    kubernetes   ClusterIP   10.96.0.1        <none>        443/TCP        13m
+    webserver    NodePort    10.111.120.231   <none>        80:31158/TCP   17s
+    ```
+
+    You can verify the nginx webpage using curl call as mentioned below:
+
+    Make sure you use NodePort Service IP to access the nginx webpage
+
+    ```bash
+    ubuntu@kubemaster:~$ curl 10.111.120.231:80
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to nginx!</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to nginx!</h1>
+    <p>If you see this page, the nginx web server is successfully installed and
+    working. Further configuration is required.</p>
+
+    <p>For online documentation and support please refer to
+    <a href="http://nginx.org/">nginx.org</a>.<br/>
+    Commercial support is available at
+    <a href="http://nginx.com/">nginx.com</a>.</p>
+
+    <p><em>Thank you for using nginx.</em></p>
+    </body>
+    </html>    
+    ```
+
+Thanks to make till this end and hope you find this interesting. There are many ways and possibilities for deploying kubernetes cluster. Here we are using kubeadm utility to deploy kubernetes cluster which is easy to setup with minimal operational overhead.
+
+Please do let me know if you have any suggestions or improvements.
 
