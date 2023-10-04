@@ -62,7 +62,7 @@ In my case I'm using the Vagrant setup mentioned above to bootstrap my VM enviro
 
 You can refer the IP and Host details mentioned in `hosts.yaml` file for our ansible inventory below.
 
-```bash
+```yaml
 File: ansible_playbooks/inventory/hosts.yaml
 ---
 all:
@@ -129,7 +129,7 @@ ansible_user: ubuntu # Ubuntu user will be used by ansible for all the setup
             └── main.yaml
 ```
 
-Make sure you have all the necessary Nodes configured in you inventory file with all the necessary variable as mentioned in the above section.
+Make sure you have all the necessary Nodes configured in your inventory file with all the necessary variable as mentioned in the above section.
 
 Once done try running ping from ansible to check connectivity.
 
@@ -139,7 +139,7 @@ You will get the similar output as mentioned below. If not verify whether the no
 
 Output:
 
-```bash
+```javascript
 kubemaster | SUCCESS => {
     "ansible_facts": {
         "discovered_interpreter_python": "/usr/bin/python3"
@@ -179,7 +179,7 @@ Now you can run same command without check to deploy the Kubernetes cluster envi
 
 Upon successful execution of above playbook you will be able to browse your Kubernetes cluster using `ubuntu` user.
 
-Output: You would receive the output similar to below once you executed the ansible playbook `setup.yaml`
+Output: You will receive the output similar to below once you executed the ansible playbook `setup.yaml`
 
 ```bash
 TASK [worker-setup : Check result for cluster] *********************************************
@@ -197,29 +197,31 @@ You can refer to the below workflow to understand the basic working concept of A
 
 ### Stage 1 - Install common packages and dependencies on all nodes
 
-    1. commons - Installs common packages & dependencies
-        - curl
-        - gnupg
-        - net-tools
-        - apt-transport-https
-        - ca-certificates
+1. commons - Installs common packages & dependencies
+    - curl
+    - gnupg
+    - net-tools
+    - apt-transport-https
+    - ca-certificates
 
-    2. configure-kernel - Updates system level settings and kernel parameter for all nodes
-        - Loads module 'br_netfilter' in kernel
-        - Enables following kernel parameters
-            - net.bridge.bridge-nf-call-ip6tables
-            - net.bridge.bridge-nf-call-iptables
-            - net.ipv4.ip_forward
+2. configure-kernel - Updates system level settings and kernel parameter for all nodes
 
-    3. containerd - Installs CRI and other necessary packages
-        Below is the list of oackages that will be installed on the nodes
-        1. CRI (Container Runtime Interface) - We will need containerd.io CRI to run containers in our pods for Kubernetes.
+    - Loads module 'br_netfilter' in kernel
+    - Enables following kernel parameters
+        - net.bridge.bridge-nf-call-ip6tables
+        - net.bridge.bridge-nf-call-iptables
+        - net.ipv4.ip_forward
 
-        2. kubeadm - Using kubeadm, you can create a minimum viable Kubernetes cluster that conforms to best practices.
+3. containerd - Installs CRI and other necessary packages
 
-        3. kubelet - Kubelet is an agent or program that runs on each node in a Kubernetes cluster.
+    Below is the list of oackages that will be installed on the nodes
+    1. CRI (Container Runtime Interface) - We will need containerd.io CRI to run containers in our pods for Kubernetes.
 
-        4. kubectl - Kubectl is a command-line tool that is used to manage Kubernetes clusters. It provides a way to communicate with the Kubernetes API and carry out HTTP requests to the API. 
+    2. kubeadm - Using kubeadm, you can create a minimum viable Kubernetes cluster that conforms to best practices.
+
+    3. kubelet - Kubelet is an agent or program that runs on each node in a Kubernetes cluster.
+
+    4. kubectl - Kubectl is a command-line tool that is used to manage Kubernetes clusters. It provides a way to communicate with the Kubernetes API and carry out HTTP requests to the API. 
 
 This stage makes your nodes compatible with kubernetes environment while resolving all the dependencies and installing all the necessary packages for kubernetes cluster.
 
